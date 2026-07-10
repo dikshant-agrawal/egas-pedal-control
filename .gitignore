@@ -1,0 +1,11 @@
+codegentemp/
+CortexM3/
+Export/
+Debug/
+db/
+incremental_db/
+output_files/
+*.rpt
+*.cyfit
+*_timing.html
+*.log
