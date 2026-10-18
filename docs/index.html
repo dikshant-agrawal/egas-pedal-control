@@ -1,374 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>eGAS Digital Twin — Dikshant Agrawal</title>
-<meta name="description" content="Interactive digital twin of the eGAS motor-control software component — live PID cluster mirroring the embedded firmware.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2304060f'/%3E%3Cpath d='M6 8 h4 v16 h-4 z M12 8 h16 v4 h-6 v4 h4 v4 h-4 v4 h6 v4 h-16 z' fill='%2300e5ff'/%3E%3C/svg%3E">
-<style>
-:root{
-  --bg-0:#04060f; --bg-1:#080c1c; --bg-2:#0e1328; --bg-3:#131a34;
-  --bg-card:rgba(14,19,40,.72);
-  --fg-0:#e6f7ff; --fg-1:#9bb3c8; --fg-2:#6b7a8f;
-  --neon:#00e5ff; --neon-2:#1affec; --neon-hot:#ff3d71; --amber:#ffbd2e;
-  --neon-soft:rgba(0,229,255,.14);
-  --neon-glow:0 0 6px rgba(0,229,255,.7), 0 0 22px rgba(0,229,255,.25);
-  --border:rgba(0,229,255,.15); --border-strong:rgba(0,229,255,.35);
-  --mono:'JetBrains Mono','Fira Code',ui-monospace,monospace;
-  --sans:'Inter','Segoe UI',system-ui,sans-serif;
-  --radius:10px;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  font-family:var(--sans); color:var(--fg-0); background:var(--bg-0);
-  -webkit-font-smoothing:antialiased; line-height:1.5; min-height:100vh; padding-top:66px;
-  background-image:
-    radial-gradient(900px 500px at 82% -8%, rgba(0,229,255,.06), transparent 60%),
-    radial-gradient(760px 480px at -8% 108%, rgba(26,255,236,.05), transparent 55%),
-    linear-gradient(180deg,var(--bg-0),var(--bg-1));
-  background-attachment:fixed;
-}
-/* faint scanlines, on-brand */
-body::before{
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:1; opacity:.4;
-  background:repeating-linear-gradient(0deg, rgba(0,229,255,.025) 0 1px, transparent 1px 3px);
-  mix-blend-mode:overlay;
-}
-a{color:inherit;text-decoration:none}
-.container{max-width:1180px;margin:0 auto;padding:0 1.5rem;position:relative;z-index:2}
-
-/* ---------- nav (matched to portfolio) ---------- */
-.nav{
-  position:fixed;top:0;left:0;right:0;z-index:100;height:66px;padding:1rem 1.5rem;
-  backdrop-filter:blur(14px);background:rgba(4,6,15,.75);border-bottom:1px solid var(--border);
-}
-.nav-inner{max-width:1180px;margin:0 auto;height:100%;display:flex;justify-content:space-between;align-items:center}
-.logo{font-family:var(--mono);font-weight:700;font-size:1.05rem;color:var(--fg-0);display:flex;align-items:center;gap:.5rem}
-.logo-chip{color:var(--neon);filter:drop-shadow(0 0 4px var(--neon));flex-shrink:0;opacity:.9}
-.nav-toggle{display:none;background:none;border:none;color:var(--fg-0);font-size:1.4rem;cursor:pointer}
-.nav-links{display:flex;gap:2rem;list-style:none;align-items:center}
-.nav-links a{color:var(--fg-1);font-family:var(--mono);font-size:.9rem;position:relative;padding:.35rem .1rem;transition:color .2s}
-.nav-links a::before{content:'[';color:var(--neon);margin-right:.2rem;opacity:0;transition:opacity .2s}
-.nav-links a::after{content:']';color:var(--neon);margin-left:.2rem;opacity:0;transition:opacity .2s}
-.nav-links a:hover,.nav-links a.active{color:var(--fg-0);text-shadow:none}
-.nav-links a:hover::before,.nav-links a.active::before,
-.nav-links a:hover::after,.nav-links a.active::after{opacity:1}
-.live-clock{font-family:var(--mono);font-size:.75rem;color:var(--neon);border:1px solid var(--border-strong);
-  padding:.25rem .55rem;border-radius:4px;background:rgba(0,229,255,.04)}
-@media(max-width:860px){
-  .nav-toggle{display:block}
-  .nav-links{position:fixed;inset:66px 0 auto 0;flex-direction:column;background:rgba(4,6,15,.97);
-    backdrop-filter:blur(12px);padding:2rem;transform:translateY(-150%);transition:transform .35s ease;
-    border-bottom:1px solid var(--border)}
-  .nav-links.open{transform:translateY(0)}
-  .live-clock{display:none}
-}
-
-/* ---------- header block ---------- */
-header{padding:3.2rem 0 1.4rem}
-.mono-label{font-family:var(--mono);font-size:.85rem;color:var(--neon);letter-spacing:.18em;text-transform:uppercase}
-.section-title{display:flex;align-items:center;gap:1rem;margin:1.1rem 0 1rem}
-.section-title::before{content:'';width:36px;height:2px;background:var(--neon);box-shadow:var(--neon-glow);flex:none}
-.section-title h1{font-size:clamp(1.7rem,3.4vw,2.5rem);font-weight:700;letter-spacing:-.01em}
-.section-title h1 b{color:var(--neon)}
-.lead{color:var(--fg-1);max-width:70ch;font-size:1.02rem}
-.lead b{color:var(--fg-0);font-weight:600}
-.spec-strip{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.3rem}
-.tag{font-family:var(--mono);font-size:.78rem;padding:.35rem .7rem;border:1px solid var(--border-strong);
-  border-radius:4px;color:var(--fg-1);background:rgba(0,229,255,.04)}
-.tag b{color:var(--neon);font-weight:500}
-
-/* ---------- console panel wrapper ---------- */
-.console{
-  margin:1.8rem 0;background:var(--bg-card);backdrop-filter:blur(10px);
-  border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);
-}
-.terminal-bar{display:flex;gap:.4rem;align-items:center;padding:.7rem 1rem;border-bottom:1px solid var(--border);background:rgba(8,12,28,.6)}
-.terminal-bar .dot{width:10px;height:10px;border-radius:50%;flex:none}
-.terminal-bar .dot:nth-child(1){background:#ff5f56}
-.terminal-bar .dot:nth-child(2){background:#ffbd2e}
-.terminal-bar .dot:nth-child(3){background:#27c93f}
-.terminal-bar .title{margin-left:auto;font-size:.72rem;color:var(--fg-2);font-family:var(--mono);letter-spacing:.04em}
-.console-body{padding:1.2rem}
-
-/* ---------- dashboard grid ---------- */
-.dash{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:1.1rem}
-.card{background:rgba(8,12,28,.55);border:1px solid var(--border);border-radius:var(--radius)}
-.card-h{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;color:var(--fg-2);text-transform:uppercase;padding:.9rem 1rem 0}
-
-/* gauge */
-.gauge-card{padding:.4rem .6rem 1rem;display:flex;flex-direction:column;align-items:center}
-.gauge-wrap{position:relative;width:100%;max-width:340px}
-svg{display:block;width:100%;height:auto;overflow:visible}
-.g-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;transform:translateY(6px)}
-.g-val{font-family:var(--mono);font-weight:700;font-size:3.1rem;color:var(--neon);line-height:1;font-variant-numeric:tabular-nums;text-shadow:var(--neon-glow)}
-.g-unit{font-family:var(--mono);font-size:.62rem;letter-spacing:.34em;color:var(--fg-2);margin-top:.4rem}
-.g-sub{margin-top:.85rem;display:flex;gap:1.3rem;font-family:var(--mono);font-size:.85rem;font-variant-numeric:tabular-nums}
-.g-sub .lab{font-size:.56rem;letter-spacing:.18em;color:var(--fg-2);display:block;margin-bottom:.2rem}
-
-/* telemetry */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;padding:.9rem 1rem .3rem}
-.stat{background:rgba(4,6,15,.5);border:1px solid var(--border);border-radius:8px;padding:.65rem .7rem}
-.stat .lab{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;color:var(--fg-2);text-transform:uppercase}
-.stat .v{font-family:var(--mono);font-weight:700;font-size:1.45rem;margin-top:.25rem;font-variant-numeric:tabular-nums;line-height:1}
-.stat .v .u{font-size:.58rem;color:var(--fg-2);margin-left:.2rem;font-weight:400}
-.stat.tgt .v{color:var(--amber)} .stat.cur .v{color:var(--neon)}
-.stat.ctl .v{color:var(--neon-2)} .stat.err .v{color:var(--neon-hot)}
-
-/* pid terms */
-.terms{display:flex;gap:.6rem;padding:.4rem 1rem 1rem}
-.term{flex:1;background:rgba(4,6,15,.5);border:1px solid var(--border);border-radius:8px;padding:.6rem .7rem}
-.term .lab{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;color:var(--fg-2)}
-.term .v{font-family:var(--mono);font-weight:600;font-size:1.05rem;margin-top:.2rem;font-variant-numeric:tabular-nums;color:var(--fg-0)}
-.bar{height:4px;border-radius:3px;background:rgba(0,229,255,.1);margin-top:.5rem;position:relative;overflow:hidden}
-.bar i{position:absolute;top:0;bottom:0;left:50%;width:0;border-radius:3px;transition:width .1s linear,left .1s linear}
-.term.p i{background:var(--neon)}.term.i i{background:var(--amber)}.term.d i{background:var(--neon-2)}
-
-/* plot */
-.plot-card{padding:.9rem 1rem 1rem}
-.legend{display:flex;gap:1.1rem;margin:.5rem 0 .7rem;font-family:var(--mono);font-size:.72rem;color:var(--fg-2)}
-.legend span{display:flex;align-items:center;gap:.5rem}
-.legend i{width:14px;height:3px;border-radius:2px}
-canvas{width:100%;display:block;border-radius:6px}
-
-/* status row */
-.statusrow{display:flex;align-items:center;gap:1rem;padding:0 .2rem 1rem;flex-wrap:wrap}
-.dirbox{display:flex;gap:.5rem;align-items:center;padding:.5rem .85rem;border-radius:8px;
-  background:rgba(4,6,15,.5);border:1px solid var(--border);font-family:var(--mono);font-weight:600;letter-spacing:.14em;font-size:.8rem}
-.dirbox .dot{width:8px;height:8px;border-radius:50%;background:var(--fg-2);transition:.2s}
-.dirbox.fwd .dot{background:var(--neon-2);box-shadow:0 0 10px var(--neon-2)}
-.dirbox.rev .dot{background:var(--amber);box-shadow:0 0 10px var(--amber)}
-.dirbox.neu{color:var(--fg-2)}
-.live{display:flex;align-items:center;gap:.55rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;color:var(--fg-2)}
-.live .led{width:9px;height:9px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);animation:led 1.5s infinite}
-.live.off .led{background:var(--amber);box-shadow:0 0 10px var(--amber);animation:none}
-@keyframes led{0%,100%{opacity:1}50%{opacity:.35}}
-
-/* controls */
-.controls{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:1.3rem;padding:1.1rem;align-items:center;
-  border-top:1px solid var(--border);margin-top:.4rem}
-.ctl .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.55rem}
-.ctl .name{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2)}
-.ctl .read{font-family:var(--mono);font-weight:600;font-size:.95rem;color:var(--fg-0);font-variant-numeric:tabular-nums}
-input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:3px;background:rgba(0,229,255,.14);outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--neon);border:2px solid var(--bg-0);box-shadow:0 0 10px rgba(0,229,255,.5);transition:.1s}
-input[type=range].amber::-webkit-slider-thumb{background:var(--amber);box-shadow:0 0 10px rgba(255,189,46,.5)}
-input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--neon);border:2px solid var(--bg-0);cursor:pointer}
-.scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.6rem;color:var(--fg-2);margin-top:.4rem;letter-spacing:.06em}
-.btnrow{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;padding:1rem 1.1rem 0}
-
-/* signature button */
-.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.15rem;border:1px solid var(--border-strong);
-  border-radius:var(--radius);font-family:var(--mono);font-size:.8rem;color:var(--fg-0);background:transparent;
-  cursor:pointer;transition:all .25s ease;position:relative;overflow:hidden;text-transform:uppercase;letter-spacing:.06em}
-.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,var(--neon),var(--neon-2));
-  transform:translateX(-101%);transition:transform .35s cubic-bezier(.2,.7,.2,1);z-index:-1}
-.btn:hover{border-color:var(--neon);color:#001018;box-shadow:var(--neon-glow)}
-.btn:hover::before{transform:translateX(0)}
-.btn.amber{border-color:rgba(255,189,46,.4)}
-.btn.amber::before{background:linear-gradient(90deg,var(--amber),#ffd76e)}
-.btn.amber:hover{border-color:var(--amber);box-shadow:0 0 6px rgba(255,189,46,.7)}
-.hint{font-family:var(--mono);font-size:.7rem;color:var(--fg-2);letter-spacing:.02em}
-
-/* footer / WIP note */
-.wip{margin:1.6rem 0 .4rem;font-family:var(--mono);font-size:.82rem;color:var(--fg-1);
-  border:1px dashed var(--border-strong);border-radius:var(--radius);padding:.9rem 1.1rem;background:rgba(0,229,255,.03)}
-.wip .c{color:var(--neon)}
-.wip .cursor{display:inline-block;width:8px;height:1em;background:var(--neon);vertical-align:-2px;margin-left:3px;animation:blink 1.1s steps(1) infinite}
-@keyframes blink{50%{opacity:0}}
-footer{border-top:1px solid var(--border);margin-top:2.2rem;padding:1.6rem 0 2.4rem}
-.foot-in{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between}
-.foot-in .cp{font-family:var(--mono);font-size:.76rem;color:var(--fg-2)}
-.foot-links{display:flex;gap:1.1rem;font-family:var(--mono);font-size:.78rem}
-.foot-links a{color:var(--fg-1);transition:.2s}
-.foot-links a:hover{color:var(--neon);text-shadow:var(--neon-glow)}
-
-@media(max-width:860px){
-  .dash{grid-template-columns:1fr}
-  .controls{grid-template-columns:1fr 1fr}
-  .stats{grid-template-columns:repeat(2,1fr)}
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>eGAS Digital Twin — Dikshant Agrawal</title>
+  <meta name="description" content="Interactive digital twin of the eGAS motor-control software component: the firmware's PID control law running in the browser against a simulated motor plant." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Portfolio's own stylesheet: this page inherits the exact same look -->
+  <link rel="stylesheet" href="https://dikshant-agrawal.github.io/assets/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2304060f'/%3E%3Cpath d='M6 8 h4 v16 h-4 z M12 8 h16 v4 h-6 v4 h4 v4 h-4 v4 h6 v4 h-16 z' fill='%2300e5ff'/%3E%3C/svg%3E" />
+  <style>
+    /* Twin-only widgets. Colours/fonts come from the portfolio's CSS variables. */
+    .twin-header { padding: 9rem 0 2.5rem; min-height: 0; }
+    .twin-header p { max-width: 720px; }
+    .twin-header p b { color: var(--fg-0); font-weight: 600; }
+    .twin-specs { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; margin-top:1.4rem; }
+    .twin-specs .tag b { color: var(--neon); font-weight: 500; }
+    .twin-panel { background: var(--bg-card); backdrop-filter: blur(10px); border:1px solid var(--border-strong);
+      border-radius: var(--radius); box-shadow: 0 8px 40px rgba(0,0,0,.6); overflow:hidden; }
+    .twin-panel .terminal-bar { padding:.7rem 1rem; margin:0; border-bottom:1px solid var(--border); background: rgba(8,12,28,.6); }
+    .twin-body { padding:1.2rem; }
+    .twin-status { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .dirbox { display:flex; gap:.5rem; align-items:center; padding:.45rem .8rem; border-radius:8px; border:1px solid var(--border);
+      background: rgba(4,6,15,.5); font-family:var(--mono); font-weight:600; letter-spacing:.14em; font-size:.78rem; color:var(--fg-2); }
+    .dirbox .dot { width:8px; height:8px; border-radius:50%; background:var(--fg-2); }
+    .dirbox.fwd { color:var(--fg-0); } .dirbox.fwd .dot { background:var(--neon-2); box-shadow:0 0 10px var(--neon-2); }
+    .dirbox.rev { color:var(--fg-0); } .dirbox.rev .dot { background:#ffbd2e; box-shadow:0 0 10px #ffbd2e; }
+    .live { display:flex; align-items:center; gap:.55rem; font-family:var(--mono); font-size:.72rem; letter-spacing:.12em; color:var(--fg-2); }
+    .live .led { width:9px; height:9px; border-radius:50%; background:var(--neon); box-shadow:0 0 10px var(--neon); animation: ledpulse 1.5s infinite; }
+    .live.off .led { background:#ffbd2e; box-shadow:0 0 10px #ffbd2e; animation:none; }
+    @keyframes ledpulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .twin-hint { font-family:var(--mono); font-size:.7rem; color:var(--fg-2); margin-left:auto; }
+    .dash { display:grid; grid-template-columns: minmax(280px,360px) 1fr; gap:1.1rem; }
+    .card { background: rgba(8,12,28,.55); border:1px solid var(--border); border-radius: var(--radius); }
+    .card-h { font-family:var(--mono); font-size:.7rem; letter-spacing:.2em; color:var(--fg-2); text-transform:uppercase; padding:.9rem 1rem 0; }
+    .gauge-card { padding:.4rem .6rem 1rem; display:flex; flex-direction:column; align-items:center; }
+    .gauge-wrap { margin:auto 0; position:relative; width:100%; max-width:320px; }
+    .gauge-wrap svg { display:block; width:100%; height:auto; overflow:visible; }
+    .g-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; transform:translateY(6px); }
+    .g-val { font-family:var(--mono); font-weight:700; font-size:2.6rem; color:var(--neon); line-height:1; font-variant-numeric:tabular-nums; text-shadow:var(--neon-glow); }
+    .g-unit { font-family:var(--mono); font-size:.6rem; letter-spacing:.3em; color:var(--fg-2); margin-top:.4rem; }
+    .g-sub { margin-top:.8rem; display:flex; gap:1.2rem; font-family:var(--mono); font-size:.82rem; font-variant-numeric:tabular-nums; }
+    .g-sub .lab { font-size:.55rem; letter-spacing:.16em; color:var(--fg-2); display:block; margin-bottom:.2rem; }
+    .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; padding:.9rem 1rem .3rem; }
+    .stat { background:rgba(4,6,15,.5); border:1px solid var(--border); border-radius:8px; padding:.6rem .7rem; }
+    .stat .lab { font-family:var(--mono); font-size:.56rem; letter-spacing:.14em; color:var(--fg-2); text-transform:uppercase; }
+    .stat .v { font-family:var(--mono); font-weight:700; font-size:1.3rem; margin-top:.25rem; font-variant-numeric:tabular-nums; line-height:1; }
+    .stat .v .u { font-size:.55rem; color:var(--fg-2); margin-left:.2rem; font-weight:400; }
+    .stat.tgt .v { color:#ffbd2e; } .stat.cur .v { color:var(--neon); } .stat.ctl .v { color:var(--neon-2); } .stat.err .v { color:var(--neon-hot); }
+    .terms { display:flex; gap:.6rem; padding:.4rem 1rem 1rem; }
+    .term { flex:1; background:rgba(4,6,15,.5); border:1px solid var(--border); border-radius:8px; padding:.55rem .7rem; }
+    .term .lab { font-family:var(--mono); font-size:.56rem; letter-spacing:.1em; color:var(--fg-2); }
+    .term .v { font-family:var(--mono); font-weight:600; font-size:1rem; margin-top:.2rem; font-variant-numeric:tabular-nums; color:var(--fg-0); }
+    .bar { height:4px; border-radius:3px; background:rgba(0,229,255,.1); margin-top:.5rem; position:relative; overflow:hidden; }
+    .bar i { position:absolute; top:0; bottom:0; left:50%; width:0; border-radius:3px; }
+    .term.p i { background:var(--neon); } .term.i i { background:#ffbd2e; } .term.d i { background:var(--neon-2); }
+    .plot-card { padding:.9rem 1rem 1rem; }
+    .legend { display:flex; gap:1.1rem; margin:.5rem 0 .7rem; font-family:var(--mono); font-size:.7rem; color:var(--fg-2); }
+    .legend span { display:flex; align-items:center; gap:.5rem; } .legend i { width:14px; height:3px; border-radius:2px; }
+    canvas#plot { width:100%; display:block; border-radius:6px; }
+    .controls { display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:1.3rem; padding:1.1rem 0 0; align-items:center; border-top:1px solid var(--border); margin-top:1.1rem; }
+    .ctl .top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.55rem; }
+    .ctl .name { font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-2); }
+    .ctl .read { font-family:var(--mono); font-weight:600; font-size:.92rem; color:var(--fg-0); font-variant-numeric:tabular-nums; }
+    input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:rgba(0,229,255,.14); outline:none; cursor:pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--neon); border:2px solid var(--bg-0); box-shadow:0 0 10px rgba(0,229,255,.5); }
+    input[type=range].amber::-webkit-slider-thumb { background:#ffbd2e; box-shadow:0 0 10px rgba(255,189,46,.5); }
+    input[type=range]::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:var(--neon); border:2px solid var(--bg-0); cursor:pointer; }
+    .scale { display:flex; justify-content:space-between; font-family:var(--mono); font-size:.58rem; color:var(--fg-2); margin-top:.4rem; letter-spacing:.06em; }
+    .twin-buttons { display:flex; gap:.7rem; flex-wrap:wrap; align-items:center; margin-top:1.1rem; }
+    .twin-buttons .btn { padding:.6rem 1rem; font-size:.78rem; }
+    .seg { display:inline-flex; border:1px solid var(--border-strong); border-radius:8px; overflow:hidden; }
+    .seg button { font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; padding:.5rem .9rem;
+      background:transparent; color:var(--fg-1); border:0; cursor:pointer; transition:all .2s; }
+    .seg button.on { background:var(--neon); color:#001018; font-weight:700; }
+    .hw-row { display:none; align-items:center; gap:.7rem; flex-wrap:wrap; margin-bottom:1rem; padding:.7rem .9rem;
+      border:1px dashed var(--border-strong); border-radius:8px; background:rgba(0,229,255,.03); font-family:var(--mono); font-size:.74rem; color:var(--fg-1); }
+    .hw-row.show { display:flex; }
+    .hw-row select { font-family:var(--mono); font-size:.74rem; background:var(--bg-2); color:var(--fg-0); border:1px solid var(--border-strong); border-radius:6px; padding:.35rem .5rem; }
+    .hw-row .btn { padding:.5rem .9rem; font-size:.74rem; }
+    .hw-msg { color:var(--fg-2); } .hw-msg.err { color:var(--neon-hot); } .hw-msg.ok { color:var(--neon-2); }
+    .ctl.locked { opacity:.4; pointer-events:none; }
+    @media (max-width: 860px) {
+      .dash { grid-template-columns:1fr; }
+      .controls { grid-template-columns:1fr 1fr; }
+      .stats { grid-template-columns:repeat(2,1fr); }
+      .twin-hint { margin-left:0; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav class="nav">
-  <div class="nav-inner">
-    <a href="https://dikshant-agrawal.github.io/index.html" class="logo">
-      <svg class="logo-chip" viewBox="0 0 44 26" width="44" height="26" aria-hidden="true">
-        <line x1="0" y1="7" x2="9" y2="7" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="0" y1="13" x2="9" y2="13" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="0" y1="19" x2="9" y2="19" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="35" y1="7" x2="44" y2="7" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="35" y1="13" x2="44" y2="13" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="35" y1="19" x2="44" y2="19" stroke="currentColor" stroke-width="1.5"/>
-        <rect x="9" y="2" width="26" height="22" rx="2" fill="rgba(0,229,255,0.1)" stroke="currentColor" stroke-width="1.2"/>
-        <circle cx="12" cy="5" r="1.5" fill="currentColor" opacity="0.7"/>
-        <text x="22" y="17" text-anchor="middle" font-family="monospace" font-size="8" fill="currentColor" font-weight="bold">M4</text>
-      </svg>
-      dikshant.sys
-    </a>
-    <button class="nav-toggle" aria-label="Toggle menu"><i class="fa-solid fa-bars"></i></button>
-    <ul class="nav-links">
-      <li><a href="https://dikshant-agrawal.github.io/index.html">home</a></li>
-      <li><a href="https://dikshant-agrawal.github.io/projects.html" class="active">projects</a></li>
-      <li><a href="https://dikshant-agrawal.github.io/experience.html">experience</a></li>
-      <li><a href="https://dikshant-agrawal.github.io/contact.html">contact</a></li>
-      <li><span id="live-clock" class="live-clock">DA/--:--:-- CET</span></li>
-    </ul>
-  </div>
-</nav>
+  <canvas id="grid-floor"></canvas>
+  <canvas id="circuit-bg"></canvas>
 
-<div class="container">
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="https://dikshant-agrawal.github.io/index.html" class="logo"><svg class="logo-chip" viewBox="0 0 44 26" width="44" height="26" aria-hidden="true">
+          <line x1="0" y1="7" x2="9" y2="7" stroke="currentColor" stroke-width="1.5" />
+          <line x1="0" y1="13" x2="9" y2="13" stroke="currentColor" stroke-width="1.5" />
+          <line x1="0" y1="19" x2="9" y2="19" stroke="currentColor" stroke-width="1.5" />
+          <line x1="35" y1="7" x2="44" y2="7" stroke="currentColor" stroke-width="1.5" />
+          <line x1="35" y1="13" x2="44" y2="13" stroke="currentColor" stroke-width="1.5" />
+          <line x1="35" y1="19" x2="44" y2="19" stroke="currentColor" stroke-width="1.5" />
+          <rect x="9" y="2" width="26" height="22" rx="2" fill="rgba(0,229,255,0.1)" stroke="currentColor" stroke-width="1.2" />
+          <circle cx="12" cy="5" r="1.5" fill="currentColor" opacity="0.7" />
+          <text x="22" y="17" text-anchor="middle" font-family="monospace" font-size="8" fill="currentColor" font-weight="bold">M4</text>
+        </svg>
+        dikshant.sys</a>
+      <button class="nav-toggle" aria-label="Toggle menu"><i class="fa-solid fa-bars"></i></button>
+      <ul class="nav-links">
+        <li><a href="https://dikshant-agrawal.github.io/index.html">home</a></li>
+        <li><a href="https://dikshant-agrawal.github.io/projects.html" class="active">projects</a></li>
+        <li><a href="https://dikshant-agrawal.github.io/experience.html">experience</a></li>
+        <li><a href="https://dikshant-agrawal.github.io/contact.html">contact</a></li>
+        <li><span id="live-clock" class="live-clock">DA/--:--:-- CET</span></li>
+      </ul>
+    </div>
+  </nav>
 
-  <!-- HEADER -->
-  <header>
-    <div class="mono-label">// boot ./egas_twin.elf — v0.1</div>
-    <div class="section-title"><h1>eGAS Motor Control · <b>Digital Twin</b></h1></div>
-    <p class="lead">Interactive twin of the <b>eGAS software component</b> (<span style="font-family:var(--mono);color:var(--neon)">swc_egas.c</span>) — a joystick-driven electronic-throttle service running a closed-loop PID speed controller. The firmware's control law runs here in the browser against a simulated motor plant, so you can retune the gains and watch the response before touching hardware.</p>
-    <div class="spec-strip">
+  <header class="page-header twin-header container">
+    <div class="side-hex left"></div>
+    <div class="side-hex right"></div>
+    <p class="mono-label">// boot ./egas_twin.elf</p>
+    <h1>eGAS Digital Twin</h1>
+    <p>An interactive twin of the <b>swc_egas</b> software component &mdash; a joystick-driven electronic-throttle service with a closed-loop PID speed controller. The firmware's control law runs here in the browser against a <b>simulated</b> motor plant &mdash; or switch to <b>Hardware</b> mode to plot the live serial stream from the board.</p>
+    <div class="twin-specs">
       <span class="tag">MODEL: <b>swc_egas.c</b></span>
       <span class="tag">CYCLE: <b>100 ms</b></span>
       <span class="tag">GAINS: <b>Kp 0.6 · Ki 2.0 · Kd 0.01</b></span>
       <span class="tag">RANGE: <b>0–10000 rpm</b></span>
-      <span class="tag">MCU: <b>Infineon PSoC</b></span>
+      <span class="tag">MCU: <b>PSoC 5LP</b></span>
     </div>
   </header>
 
-  <!-- CONSOLE -->
-  <div class="console">
-    <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-      <span class="title">egas_twin — pid_cluster @ 10 Hz</span></div>
-    <div class="console-body">
+  <section class="container" style="padding-top:0; padding-bottom:2rem;">
+    <div class="twin-panel reveal">
+      <div class="terminal-bar"><span></span><span></span><span></span><span class="title">egas_twin — pid_cluster @ 10 Hz</span></div>
+      <div class="twin-body">
 
-      <div class="statusrow">
-        <div class="dirbox neu" id="dirbox"><span class="dot"></span><span id="dirtxt">NEUTRAL</span></div>
-        <div class="live" id="live"><span class="led"></span><span id="livetxt">LIVE · 10 Hz</span></div>
-        <div class="hint" style="margin-left:auto">closed-loop · derivative-on-error · conditional-integration anti-windup</div>
-      </div>
+        <div class="twin-status">
+          <div class="seg" role="group" aria-label="Data source">
+            <button id="mode-sim" class="on" type="button">Simulation</button>
+            <button id="mode-hw" type="button">Hardware (serial)</button>
+          </div>
+          <div class="dirbox" id="dirbox"><span class="dot"></span><span id="dirtxt">NEUTRAL</span></div>
+          <div class="live" id="live"><span class="led"></span><span id="livetxt">SIMULATION · 10 Hz</span></div>
+          <div class="twin-hint">derivative-on-error · conditional-integration anti-windup</div>
+        </div>
+        <div class="hw-row" id="hwrow">
+          <span>Baud</span>
+          <select id="baud"><option>9600</option><option>57600</option><option selected>115200</option><option>230400</option><option>460800</option></select>
+          <button class="btn primary" id="connect" type="button"><i class="fa-solid fa-plug"></i> Connect &amp; select COM port</button>
+          <span class="hw-msg" id="hwmsg">Reads UART lines <code>T:&hellip; C:&hellip; E:&hellip;</code> or raw <code>target,current</code> values (Chrome / Edge, Web Serial).</span>
+        </div>
 
-      <div class="dash">
-        <!-- GAUGE -->
-        <div class="card gauge-card">
-          <div class="card-h" style="align-self:flex-start">Motor Speed</div>
-          <div class="gauge-wrap">
-            <svg viewBox="0 0 280 280" id="gauge">
-              <defs>
-                <linearGradient id="cur-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#0090a8"/><stop offset="1" stop-color="#00e5ff"/>
-                </linearGradient>
-              </defs>
-              <path id="track" fill="none" stroke="#101833" stroke-width="16" stroke-linecap="round"/>
-              <path id="fill" fill="none" stroke="url(#cur-grad)" stroke-width="16" stroke-linecap="round"/>
-              <g id="ticks"></g>
-              <line id="tgt-mark" stroke="#ffbd2e" stroke-width="3.5" stroke-linecap="round"/>
-              <line id="ctl-mark" stroke="#1affec" stroke-width="3.5" stroke-linecap="round"/>
-            </svg>
-            <div class="g-center">
-              <div class="g-val" id="gval">0</div>
-              <div class="g-unit">RPM · CURRENT</div>
-              <div class="g-sub">
-                <div><span class="lab">TARGET</span><span style="color:var(--amber)" id="gtgt">0</span></div>
-                <div><span class="lab">CONTROL</span><span style="color:var(--neon-2)" id="gctl">0</span></div>
+        <div class="dash">
+          <div class="card gauge-card">
+            <div class="card-h" style="align-self:flex-start">Motor Speed</div>
+            <div class="gauge-wrap">
+              <svg viewBox="0 0 280 280" id="gauge">
+                <defs><linearGradient id="cur-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0090a8"/><stop offset="1" stop-color="#00e5ff"/></linearGradient></defs>
+                <path id="track" fill="none" stroke="#101833" stroke-width="16" stroke-linecap="round"/>
+                <path id="fill" fill="none" stroke="url(#cur-grad)" stroke-width="16" stroke-linecap="round"/>
+                <g id="ticks"></g>
+                <line id="tgt-mark" stroke="#ffbd2e" stroke-width="3.5" stroke-linecap="round"/>
+                <line id="ctl-mark" stroke="#1affec" stroke-width="3.5" stroke-linecap="round"/>
+              </svg>
+              <div class="g-center">
+                <div class="g-val" id="gval">0</div>
+                <div class="g-unit">RPM · CURRENT</div>
+                <div class="g-sub">
+                  <div><span class="lab">TARGET</span><span style="color:#ffbd2e" id="gtgt">0</span></div>
+                  <div><span class="lab">CONTROL</span><span style="color:var(--neon-2)" id="gctl">0</span></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- RIGHT -->
-        <div class="card">
-          <div class="card-h">Telemetry</div>
-          <div class="stats">
-            <div class="stat tgt"><div class="lab">Target</div><div class="v"><span id="s-tgt">0</span><span class="u">rpm</span></div></div>
-            <div class="stat cur"><div class="lab">Current</div><div class="v"><span id="s-cur">0</span><span class="u">rpm</span></div></div>
-            <div class="stat ctl"><div class="lab">Control</div><div class="v"><span id="s-ctl">0</span><span class="u">rpm</span></div></div>
-            <div class="stat err"><div class="lab">Error</div><div class="v"><span id="s-err">0</span><span class="u">rpm</span></div></div>
-          </div>
-          <div class="card-h" style="padding-top:.7rem">PID Term Contribution</div>
-          <div class="terms">
-            <div class="term p"><div class="lab">P · proportional</div><div class="v" id="t-p">0</div><div class="bar"><i id="b-p"></i></div></div>
-            <div class="term i"><div class="lab">I · integral</div><div class="v" id="t-i">0</div><div class="bar"><i id="b-i"></i></div></div>
-            <div class="term d"><div class="lab">D · derivative</div><div class="v" id="t-d">0</div><div class="bar"><i id="b-d"></i></div></div>
-          </div>
-          <div class="plot-card">
-            <div class="card-h" style="padding:0">Live Response · 12 s window</div>
-            <div class="legend">
-              <span><i style="background:var(--amber)"></i>Target</span>
-              <span><i style="background:var(--neon)"></i>Current</span>
-              <span><i style="background:var(--neon-2)"></i>Control</span>
+          <div class="card">
+            <div class="card-h">Telemetry</div>
+            <div class="stats">
+              <div class="stat tgt"><div class="lab">Target</div><div class="v"><span id="s-tgt">0</span><span class="u">rpm</span></div></div>
+              <div class="stat cur"><div class="lab">Current</div><div class="v"><span id="s-cur">0</span><span class="u">rpm</span></div></div>
+              <div class="stat ctl"><div class="lab">Control</div><div class="v"><span id="s-ctl">0</span><span class="u">rpm</span></div></div>
+              <div class="stat err"><div class="lab">Error</div><div class="v"><span id="s-err">0</span><span class="u">rpm</span></div></div>
             </div>
-            <canvas id="plot" width="760" height="210"></canvas>
+            <div class="card-h" style="padding-top:.7rem">PID Term Contribution</div>
+            <div class="terms">
+              <div class="term p"><div class="lab">P · proportional</div><div class="v" id="t-p">0</div><div class="bar"><i id="b-p"></i></div></div>
+              <div class="term i"><div class="lab">I · integral</div><div class="v" id="t-i">0</div><div class="bar"><i id="b-i"></i></div></div>
+              <div class="term d"><div class="lab">D · derivative</div><div class="v" id="t-d">0</div><div class="bar"><i id="b-d"></i></div></div>
+            </div>
+            <div class="plot-card">
+              <div class="card-h" style="padding:0">Live Response · 12 s window</div>
+              <div class="legend">
+                <span><i style="background:#ffbd2e"></i>Target</span>
+                <span><i style="background:var(--neon)"></i>Current</span>
+                <span><i style="background:var(--neon-2)"></i>Control</span>
+              </div>
+              <canvas id="plot" width="760" height="210"></canvas>
+            </div>
           </div>
         </div>
+
+        <div class="controls">
+          <div class="ctl" id="thr-ctl">
+            <div class="top"><span class="name">Throttle / Joystick</span><span class="read" id="r-thr">0</span></div>
+            <input type="range" class="amber" id="thr" min="-125" max="125" value="0" step="1" />
+            <div class="scale"><span>◄ 125 REV</span><span>0</span><span>FWD 125 ►</span></div>
+          </div>
+          <div class="ctl">
+            <div class="top"><span class="name">Kp</span><span class="read" id="r-kp">0.60</span></div>
+            <input type="range" id="kp" min="0" max="3" value="0.6" step="0.01" />
+            <div class="scale"><span>0</span><span>proportional</span><span>3</span></div>
+          </div>
+          <div class="ctl">
+            <div class="top"><span class="name">Ki</span><span class="read" id="r-ki">2.00</span></div>
+            <input type="range" id="ki" min="0" max="8" value="2.0" step="0.05" />
+            <div class="scale"><span>0</span><span>integral</span><span>8</span></div>
+          </div>
+          <div class="ctl">
+            <div class="top"><span class="name">Kd</span><span class="read" id="r-kd">0.010</span></div>
+            <input type="range" id="kd" min="0" max="0.2" value="0.01" step="0.001" />
+            <div class="scale"><span>0</span><span>derivative</span><span>0.2</span></div>
+          </div>
+        </div>
+        <div class="twin-buttons">
+          <button class="btn" id="pause">⏸ Pause</button>
+          <button class="btn" id="load">⚡ Load Kick</button>
+          <button class="btn" id="reset">↺ Reset</button>
+          <button class="btn" id="defaults">↩ Firmware Defaults</button>
+          <span class="twin-hint" style="margin-left:0">Load Kick drops the motor ~2500 rpm so you can watch the controller recover.</span>
+        </div>
+
       </div>
-
-      <!-- CONTROLS -->
-      <div class="controls">
-        <div class="ctl">
-          <div class="top"><span class="name">Throttle / Joystick</span><span class="read" id="r-thr">0</span></div>
-          <input type="range" class="amber" id="thr" min="-125" max="125" value="0" step="1">
-          <div class="scale"><span>◄ 125 REV</span><span>0</span><span>FWD 125 ►</span></div>
-        </div>
-        <div class="ctl">
-          <div class="top"><span class="name">Kp</span><span class="read" id="r-kp">0.60</span></div>
-          <input type="range" id="kp" min="0" max="3" value="0.6" step="0.01">
-          <div class="scale"><span>0</span><span>proportional</span><span>3</span></div>
-        </div>
-        <div class="ctl">
-          <div class="top"><span class="name">Ki</span><span class="read" id="r-ki">2.00</span></div>
-          <input type="range" id="ki" min="0" max="8" value="2.0" step="0.05">
-          <div class="scale"><span>0</span><span>integral</span><span>8</span></div>
-        </div>
-        <div class="ctl">
-          <div class="top"><span class="name">Kd</span><span class="read" id="r-kd">0.010</span></div>
-          <input type="range" id="kd" min="0" max="0.2" value="0.01" step="0.001">
-          <div class="scale"><span>0</span><span>derivative</span><span>0.2</span></div>
-        </div>
-      </div>
-      <div class="btnrow">
-        <button class="btn" id="pause">⏸ Pause</button>
-        <button class="btn" id="load">⚡ Load Kick</button>
-        <button class="btn amber" id="reset">↺ Reset</button>
-        <button class="btn" id="defaults">↩ Firmware Defaults</button>
-        <span class="hint">Load Kick drops the motor ~2500 rpm so you can watch the controller recover.</span>
-      </div>
-
-    </div><!-- /console-body -->
-  </div><!-- /console -->
-
-  <!-- WIP NOTE -->
-  <div class="wip">
-    <span class="c">// NOTE:</span> real-time sync with the live eGAS service over UART is in progress —
-    this build runs the firmware's control law against a simulated plant. Hardware telemetry streaming (Python bridge) coming next.<span class="cursor"></span>
-  </div>
-
-</div>
-
-<!-- FOOTER -->
-<footer>
-  <div class="container foot-in">
-    <div class="cp">© <span id="yr"></span> Dikshant Agrawal · compiled with GCC 13.2 · Darmstadt, DE</div>
-    <div class="foot-links">
-      <a href="https://github.com/dikshant-agrawal">github</a>
-      <a href="https://www.linkedin.com/in/agrawaldikshant/">linkedin</a>
-      <a href="mailto:agrawaldikshant3001@gmail.com">email</a>
     </div>
-  </div>
-</footer>
+  </section>
 
-<script>
+  <section class="container" style="padding-top:0; padding-bottom:2rem;">
+    <div class="log-motivation reveal">
+      <div class="lm-header">LOG_NOTE</div>
+      <div class="lm-body">
+        <span class="lm-quote">Simulation mode runs the firmware's control law against a simulated motor plant. Hardware mode reads the firmware's debug UART stream (T = target, C = current, E = error) over the browser's Web Serial API; control and P/I/D values shown in that mode are recomputed by the twin from the measured data.</span>
+        <span class="lm-author">— source: swc_egas.c · egas-pedal-control</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="container" style="text-align:center; padding-top:0; padding-bottom:2rem;">
+    <div class="btn-row" style="justify-content:center;">
+      <a class="btn primary" href="https://github.com/dikshant-agrawal/egas-pedal-control" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> view source</a>
+      <a class="btn" href="https://dikshant-agrawal.github.io/projects.html"><i class="fa-solid fa-arrow-left"></i> back to projects</a>
+    </div>
+  </section>
+
+  <footer>
+    <p>&copy; <span id="yr"></span> Dikshant Agrawal · compiled with <span class="accent">GCC 13.2</span> · Darmstadt, DE</p>
+    <div class="footer-row">
+      <a href="https://github.com/dikshant-agrawal" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> github</a>
+      <a href="https://www.linkedin.com/in/agrawaldikshant/" target="_blank" rel="noopener"><i class="fa-brands fa-linkedin"></i> linkedin</a>
+      <a href="mailto:agrawaldikshant3001@gmail.com"><i class="fa-solid fa-envelope"></i> email</a>
+    </div>
+  </footer>
+
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+  <!-- Portfolio script: grid floor, circuit background, clock, nav toggle, scroll-reveal -->
+  <script src="https://dikshant-agrawal.github.io/assets/script.js"></script>
+  <script>
 /* ===== constants mirrored from swc_egas.c ===== */
 const MAX_RPM=10000, JOYSTICK_MAX=125, DT=0.1, TAU=0.45, W=760, H=210, WINDOW=120;
 let gains={kp:0.6,ki:2.0,kd:0.01}, joystick=0, integral=0, prevError=0, plant=0, running=true;
 let terms={p:0,i:0,d:0}; let hist={t:[],c:[],o:[]};
+let mode='sim';                 // 'sim' | 'hw'
 const $=id=>document.getElementById(id);
 
 function computeTarget(jx){
@@ -376,8 +283,8 @@ function computeTarget(jx){
   if(jx>-2){let s=Math.round(jx*MAX_RPM/JOYSTICK_MAX);return{speed:Math.min(Math.max(s,0),MAX_RPM),dir:1};}
   let s=Math.round((-jx)*MAX_RPM/JOYSTICK_MAX);return{speed:Math.min(Math.max(s,0),MAX_RPM),dir:-1};
 }
-function step(){
-  const tgt=computeTarget(joystick), target=tgt.speed, current=plant;
+/* the firmware's PID law (swc_egas.c): derivative-on-error + conditional-integration anti-windup */
+function pid(target,current){
   const error=target-current, derivative=(error-prevError)/DT; prevError=error;
   let output=gains.kp*error+gains.ki*integral+gains.kd*derivative;
   if(output>0&&output<MAX_RPM) integral+=error*DT;
@@ -385,11 +292,28 @@ function step(){
   if(output<0)output=0; if(output>MAX_RPM)output=MAX_RPM;
   if(target===0){integral=0;prevError=0;output=0;}
   terms={p:gains.kp*error,i:gains.ki*integral,d:gains.kd*derivative};
+  return {error,output};
+}
+function pushHist(t,c,o){
+  hist.t.push(t);hist.c.push(c);hist.o.push(o);
+  if(hist.t.length>WINDOW){hist.t.shift();hist.c.shift();hist.o.shift();}
+}
+/* ---- simulation step (10 Hz) ---- */
+function step(){
+  const tgt=computeTarget(joystick), target=tgt.speed, current=plant;
+  const {error,output}=pid(target,current);
   plant+=(output-plant)*(DT/TAU); plant+=(Math.random()-0.5)*14;
   if(plant<0)plant=0; if(plant>MAX_RPM)plant=MAX_RPM;
-  hist.t.push(target);hist.c.push(plant);hist.o.push(output);
-  if(hist.t.length>WINDOW){hist.t.shift();hist.c.shift();hist.o.shift();}
+  pushHist(target,plant,output);
   render(target,plant,output,tgt.dir,error);
+}
+/* ---- hardware sample (one parsed serial line) ---- */
+function hwSample(T,C,E){
+  if(Math.abs(E-(T-C))>1) return;               // same glitch filter as docs/live_pid_plot.m
+  const dir=T>0?1:T<0?-1:0, target=Math.abs(T), current=Math.abs(C);
+  const {error,output}=pid(target,current);      // twin recomputes control from measured data
+  pushHist(target,current,output);
+  render(target,current,output,dir,error);
 }
 
 /* gauge geometry */
@@ -413,7 +337,7 @@ function render(target,current,output,dir,error){
   $('t-p').textContent=terms.p.toFixed(0); $('t-i').textContent=terms.i.toFixed(0); $('t-d').textContent=terms.d.toFixed(0);
   const bar=(el,val)=>{const f=Math.max(-1,Math.min(1,val/MAX_RPM));const w=Math.abs(f)*50;el.style.width=w+'%';el.style.left=f>=0?'50%':(50-w)+'%';};
   bar($('b-p'),terms.p);bar($('b-i'),terms.i);bar($('b-d'),terms.d);
-  const db=$('dirbox');db.className='dirbox '+(dir===1?'fwd':dir===-1?'rev':'neu');
+  const db=$('dirbox');db.className='dirbox '+(dir===1?'fwd':dir===-1?'rev':'');
   $('dirtxt').textContent=dir===1?'FORWARD':dir===-1?'REVERSE':'NEUTRAL';
   drawPlot();
 }
@@ -433,37 +357,79 @@ function drawPlot(){
 }
 
 /* controls */
+function resetState(){plant=0;integral=0;prevError=0;hist={t:[],c:[],o:[]};terms={p:0,i:0,d:0};render(0,0,0,0,0);}
 $('thr').addEventListener('input',e=>{joystick=+e.target.value;$('r-thr').textContent=joystick;});
 $('kp').addEventListener('input',e=>{gains.kp=+e.target.value;$('r-kp').textContent=gains.kp.toFixed(2);});
 $('ki').addEventListener('input',e=>{gains.ki=+e.target.value;$('r-ki').textContent=gains.ki.toFixed(2);});
 $('kd').addEventListener('input',e=>{gains.kd=+e.target.value;$('r-kd').textContent=gains.kd.toFixed(3);});
-$('pause').addEventListener('click',function(){running=!running;this.textContent=running?'⏸ Pause':'▶ Resume';
-  $('live').classList.toggle('off',!running);$('livetxt').textContent=running?'LIVE · 10 Hz':'PAUSED';});
-$('reset').addEventListener('click',()=>{plant=0;integral=0;prevError=0;hist={t:[],c:[],o:[]};joystick=0;$('thr').value=0;$('r-thr').textContent=0;});
-$('load').addEventListener('click',()=>{plant=Math.max(0,plant-2500);});
+function setLive(){const live=$('live');live.classList.toggle('off',!running);
+  $('livetxt').textContent=!running?'PAUSED':(mode==='sim'?'SIMULATION · 10 Hz':(port?'SERIAL · '+$('baud').value+' baud':'SERIAL · NOT CONNECTED'));}
+$('pause').addEventListener('click',function(){running=!running;this.textContent=running?'⏸ Pause':'▶ Resume';setLive();});
+$('reset').addEventListener('click',()=>{resetState();joystick=0;$('thr').value=0;$('r-thr').textContent=0;});
+$('load').addEventListener('click',()=>{if(mode==='sim')plant=Math.max(0,plant-2500);});
 $('defaults').addEventListener('click',()=>{gains={kp:0.6,ki:2.0,kd:0.01};$('kp').value=0.6;$('ki').value=2.0;$('kd').value=0.01;
   $('r-kp').textContent='0.60';$('r-ki').textContent='2.00';$('r-kd').textContent='0.010';});
 
-/* clock (Europe/Berlin) + year */
-function tick(){
-  const el=$('live-clock'); if(!el)return;
-  try{const t=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
-    el.textContent='DA/'+t+' CET';}catch(e){}
+/* ===== Hardware mode: Web Serial (Chrome / Edge, needs https) ===== */
+let port=null, reader=null, keepReading=false;
+const hwmsg=(t,cls)=>{const m=$('hwmsg');m.textContent=t;m.className='hw-msg'+(cls?' '+cls:'');};
+function setMode(m){
+  mode=m;
+  $('mode-sim').classList.toggle('on',m==='sim'); $('mode-hw').classList.toggle('on',m==='hw');
+  $('hwrow').classList.toggle('show',m==='hw');
+  $('thr-ctl').classList.toggle('locked',m==='hw');   // joystick is physical in hardware mode
+  $('load').disabled=(m==='hw'); $('load').style.opacity=(m==='hw')?.4:1;
+  if(m==='sim'){ disconnect(); }
+  resetState(); setLive();
 }
-setInterval(tick,1000);tick();
-$('yr').textContent=new Date().getFullYear();
+async function connect(){
+  if(!('serial' in navigator)){hwmsg('Web Serial is not supported in this browser — use Chrome or Edge on desktop.','err');return;}
+  try{
+    port=await navigator.serial.requestPort();            // browser shows the COM-port picker
+    await port.open({baudRate:+$('baud').value});
+  }catch(e){port=null;hwmsg(e&&e.name==='NotFoundError'?'No port selected.':'Could not open port: '+(e&&e.message||e),'err');setLive();return;}
+  $('connect').innerHTML='<i class="fa-solid fa-plug-circle-xmark"></i> Disconnect';
+  hwmsg('Connected — waiting for T:/C:/E: lines…','ok'); resetState(); setLive();
+  keepReading=true; readLoop();
+}
+async function readLoop(){
+  const dec=new TextDecoder(); let buf='';
+  while(port&&port.readable&&keepReading){
+    reader=port.readable.getReader();
+    try{
+      while(true){
+        const {value,done}=await reader.read(); if(done)break;
+        buf+=dec.decode(value,{stream:true});
+        let nl; while((nl=buf.search(/[\r\n]/))>=0){
+          const line=buf.slice(0,nl); buf=buf.slice(nl+1);
+          // accepts  "DEBUG : T:3120 C:2011 E:1109"  or raw values  "3120,2011"  /  "3120,2011,1109"
+          let m=line.match(/T:\s*(-?\d+)\s+C:\s*(-?\d+)\s+E:\s*(-?\d+)/);
+          if(!m){const r=line.match(/^\s*(-?\d+)[,;\s]+(-?\d+)(?:[,;\s]+(-?\d+))?\s*$/);
+                 if(r)m=[r[0],r[1],r[2],r[3]!==undefined?r[3]:String(+r[1]-+r[2])];}
+          if(m&&running&&mode==='hw'){hwSample(+m[1],+m[2],+m[3]);hwmsg('Receiving data','ok');}
+        }
+        if(buf.length>4096)buf='';
+      }
+    }catch(e){hwmsg('Read error: '+(e&&e.message||e),'err');}
+    finally{try{reader.releaseLock();}catch(_){}} 
+  }
+}
+async function disconnect(){
+  keepReading=false;
+  try{if(reader)await reader.cancel();}catch(_){}
+  try{if(port)await port.close();}catch(_){}
+  port=null; reader=null;
+  $('connect').innerHTML='<i class="fa-solid fa-plug"></i> Connect &amp; select COM port';
+  if(mode==='hw')hwmsg('Disconnected.',''); setLive();
+}
+$('connect').addEventListener('click',()=>{port?disconnect():connect();});
+$('mode-sim').addEventListener('click',()=>setMode('sim'));
+$('mode-hw').addEventListener('click',()=>setMode('hw'));
+if(!('serial' in navigator))hwmsg('Hardware mode needs Chrome or Edge (Web Serial). Simulation works everywhere.','err');
 
-/* mobile nav toggle (matched to portfolio) */
-(function(){
-  const toggle=document.querySelector('.nav-toggle'), links=document.querySelector('.nav-links');
-  if(!toggle||!links)return;
-  toggle.addEventListener('click',()=>links.classList.toggle('open'));
-  links.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>links.classList.remove('open')));
-})();
-
-/* loop */
-setInterval(()=>{if(running)step();},100);
+/* loop (simulation only) */
+setInterval(()=>{if(running&&mode==='sim')step();},100);
 render(0,0,0,0,0);
-</script>
+  </script>
 </body>
 </html>
