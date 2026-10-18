@@ -29,6 +29,12 @@
 #define JOYSTICK_MAX 125
 #define INTEGRAL_MAX 50000
 
+/* Stream target/current/error over the debug UART once per control cycle (100 ms).
+ * Line format: "DEBUG   : T:<target> C:<current> E:<error>"  (signed rpm, - = reverse),
+ * which the browser digital twin (docs/index.html, Hardware mode) and docs/live_pid_plot.m read.
+ * Set to 0 to silence the stream. */
+#define EGAS_SERIAL_STREAM 1
+
 
 
 
@@ -285,7 +291,9 @@ void EGAS_controlEngine_run(RTE_event ev, uint32_t cycleTime){
     
     RTE_SC_SPEED_set(&SO_CURRENTSPEED_signal, currentSpeed);
     
-    //LOG_D("T:%d C:%d E:%d\n", targetSpeed.speed*targetSpeed.direction, currentSpeed.speed*currentSpeed.direction, (targetSpeed.speed*targetSpeed.direction-currentSpeed.speed*currentSpeed.direction));
+#if EGAS_SERIAL_STREAM
+    LOG_D("T:%d C:%d E:%d\n", targetSpeed.speed*targetSpeed.direction, currentSpeed.speed*currentSpeed.direction, (targetSpeed.speed*targetSpeed.direction-currentSpeed.speed*currentSpeed.direction));
+#endif
     
     //OUTPUT
     RTE_SC_SPEED_set(&SO_CONTROLSPEED_signal, controlSpeed);
