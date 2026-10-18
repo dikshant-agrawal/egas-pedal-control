@@ -5,6 +5,9 @@ An electronic throttle (E-Gas) system on PSoC 5LP: the accelerator input — a j
 ## What it does
 Implements the automotive E-Gas (throttle-by-wire) concept as a layered real-time system: the control signal travels purely electronically — joystick ADC in, engine PWM out, no mechanical linkage. A generated Runtime Environment (RTE) decouples the application software components: `swc_egas` reads the joystick 'pedal' (ADC) and commands engine speed, while dedicated tasks handle control, I/O and the HMI, all scheduled by Erika (OSEK) tasks, events and alarms.
 
+## Live digital twin
+Interactive browser twin of the `swc_egas` PID speed controller (same gains and control law as the firmware, run against a simulated motor plant): https://dikshant-agrawal.github.io/egas-pedal-control/
+
 ## Features
 - AUTOSAR-style architecture: SWCs communicating only through generated RTE signals
 - `swc_egas` — joystick 'pedal' acquisition (ADC) + engine speed control with brake interaction
